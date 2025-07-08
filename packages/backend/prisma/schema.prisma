@@ -1,0 +1,116 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user
+  institution
+  employer
+  admin
+}
+
+enum CertificateType {
+  academic
+  experience
+}
+
+enum VerificationResult {
+  valid
+  invalid
+}
+
+model User {
+  id            String   @id @default(uuid())
+  did           String   @unique
+  walletAddress String
+  name          String
+  email         String?
+  role          Role     @default(user)
+  createdAt     DateTime @default(now())
+
+  // Relations
+  ownedInstitutions Institution[]
+  ownedEmployers    Employer[]
+
+  @@map("users")
+}
+
+model Institution {
+  id         String   @id @default(uuid())
+  name       String
+  did        String   @unique
+  publicKeys String[]
+  approved   Boolean  @default(false)
+  ownerId    String
+  createdAt  DateTime @default(now())
+
+  // Relations
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@map("institutions")
+}
+
+model Employer {
+  id          String   @id @default(uuid())
+  companyName String
+  did         String   @unique
+  publicKeys  String[]
+  approved    Boolean  @default(false)
+  ownerId     String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@map("employers")
+}
+
+model Certificate {
+  id          String          @id @default(uuid())
+  type        CertificateType
+  title       String
+  issuerDid   String
+  holderDid   String
+  hash        String          @unique
+  metadataURI String
+  txHash      String
+  issuedAt    DateTime        @default(now())
+  verified    Boolean         @default(false)
+
+  // Relations
+  verificationLogs VerificationLog[]
+
+  @@map("certificates")
+}
+
+model VerificationLog {
+  id            String             @id @default(uuid())
+  certificateId String
+  verifierDid   String
+  result        VerificationResult
+  timestamp     DateTime           @default(now())
+
+  // Relations
+  certificate Certificate @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+
+  @@map("verification_logs")
+}
+
+model Reputation {
+  id        String   @id @default(uuid())
+  targetDid String
+  sourceDid String
+  score     Int
+  message   String
+  createdAt DateTime @default(now())
+
+  @@map("reputations")
+}
