@@ -1,4 +1,5 @@
 import { ethers } from 'ethers'
+import axios from 'axios'
 import type { WalletInfo } from '@/types'
 
 declare global {
@@ -7,10 +8,37 @@ declare global {
   }
 }
 
+interface KBUProfile {
+  creator: string
+  owner: string
+  signer: string
+  name: string
+  link: string
+  appData: string
+  rps: number
+  generatedRPs: number
+  ownedProfilesCount: number
+  height: number
+  isRented: boolean
+  tenant: string
+  rentedAt: number
+  duration: number
+  isCandidate: boolean
+  isBanned: boolean
+  contribution: number
+  offeredAt: number
+  bidAmount: number
+  buyer: string
+  balance: number
+  bidTarget: string
+  ownedProfiles?: any[]
+}
+
 class WalletService {
   private provider: ethers.BrowserProvider | null = null
   private signer: ethers.JsonRpcSigner | null = null
   private currentAccount: string | null = null
+  private kbuRpcUrl: string = 'https://rpc.kbunet.net'
 
   async connect(): Promise<WalletInfo> {
     if (!window.ethereum) {
@@ -33,14 +61,25 @@ class WalletService {
 
       const network = await this.provider.getNetwork()
       
-      // Generate DID from wallet address
-      const did = this.generateDID(this.currentAccount)
+      // Generate KBU profile ID from wallet address
+      const profileId = this.generateKBUProfileId(this.currentAccount!)
+      const did = this.generateDID(profileId)
+
+      // Try to get existing KBU profile
+      let kbuProfile: KBUProfile | null = null
+      try {
+        kbuProfile = await this.getKBUProfile(profileId)
+      } catch (error) {
+        console.log('Profile not found on KBU network, will need to create one')
+      }
 
       const walletInfo: WalletInfo = {
         address: this.currentAccount,
         did,
         chainId: Number(network.chainId),
         isConnected: true,
+        kbuProfileId: profileId,
+        kbuProfile,
       }
 
       // Listen for account changes
@@ -82,6 +121,72 @@ class WalletService {
     }
   }
 
+  async getKBUProfile(profileId: string): Promise<KBUProfile> {
+    try {
+      const response = await axios.post(this.kbuRpcUrl, {
+        jsonrpc: '2.0',
+        method: 'getprofile',
+        params: [profileId],
+        id: 1,
+      })
+
+      if (response.data.error) {
+        throw new Error(`KBU RPC Error: ${response.data.error.message}`)
+      }
+
+      return response.data.result
+    } catch (error: any) {
+      console.error('Failed to get KBU profile:', error)
+      throw new Error(`Failed to get KBU profile: ${error.message}`)
+    }
+  }
+
+  async createKBUProfile(profileData?: any): Promise<string> {
+    if (!this.currentAccount) {
+      throw new Error('Wallet not connected')
+    }
+
+    try {
+      const profileId = this.generateKBUProfileId(this.currentAccount)
+      
+      const response = await axios.post(this.kbuRpcUrl, {
+        jsonrpc: '2.0',
+        method: 'createprofile',
+        params: [profileId, profileData || {}],
+        id: 1,
+      })
+
+      if (response.data.error) {
+        throw new Error(`KBU RPC Error: ${response.data.error.message}`)
+      }
+
+      return response.data.result
+    } catch (error: any) {
+      console.error('Failed to create KBU profile:', error)
+      throw new Error(`Failed to create KBU profile: ${error.message}`)
+    }
+  }
+
+  async updateKBUProfileAppData(profileId: string, appData: any): Promise<boolean> {
+    try {
+      const response = await axios.post(this.kbuRpcUrl, {
+        jsonrpc: '2.0',
+        method: 'updateprofile',
+        params: [profileId, { appData: JSON.stringify(appData) }],
+        id: 1,
+      })
+
+      if (response.data.error) {
+        throw new Error(`KBU RPC Error: ${response.data.error.message}`)
+      }
+
+      return true
+    } catch (error: any) {
+      console.error('Failed to update KBU profile:', error)
+      return false
+    }
+  }
+
   async switchNetwork(chainId: number): Promise<void> {
     if (!window.ethereum) {
       throw new Error('MetaMask is not installed')
@@ -117,10 +222,23 @@ class WalletService {
     return this.currentAccount
   }
 
-  private generateDID(address: string): string {
-    // Simple DID generation based on wallet address
-    // In production, this would integrate with a proper DID resolver
-    return `did:ethr:${address}`
+  getCurrentKBUProfileId(): string | null {
+    if (!this.currentAccount) return null
+    return this.generateKBUProfileId(this.currentAccount)
+  }
+
+  private generateKBUProfileId(address: string): string {
+    // Remove 0x prefix and convert to lowercase
+    const cleanAddress = address.replace('0x', '').toLowerCase()
+    
+    // KBU profile IDs appear to be 40-character hex strings
+    // We can use the Ethereum address directly since it's already 40 chars
+    return cleanAddress
+  }
+
+  private generateDID(profileId: string): string {
+    // Generate DID using KBU network format
+    return `did:kbu:${profileId}`
   }
 
   private async handleAccountsChanged(accounts: string[]): Promise<void> {
@@ -154,31 +272,138 @@ class WalletService {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
 
-  // Certificate-specific methods
+  formatKBUProfileId(profileId: string): string {
+    if (!profileId) return ''
+    return `${profileId.slice(0, 8)}...${profileId.slice(-8)}`
+  }
+
+  // Certificate-specific methods for KBU network
+  async addCertificateToProfile(certificateData: {
+    hash: string
+    title: string
+    type: string
+    issuer: string
+    issuedAt: string
+    metadataURI: string
+  }): Promise<boolean> {
+    const profileId = this.getCurrentKBUProfileId()
+    if (!profileId) {
+      throw new Error('No KBU profile ID available')
+    }
+
+    try {
+      // Get current profile
+      const profile = await this.getKBUProfile(profileId)
+      
+      // Parse existing appData
+      const currentAppData = profile.appData ? JSON.parse(profile.appData) : {}
+      const certificates = currentAppData.certificates || []
+      
+      // Add new certificate
+      certificates.push({
+        ...certificateData,
+        addedAt: new Date().toISOString(),
+      })
+      
+      // Update appData
+      const updatedAppData = {
+        ...currentAppData,
+        certificates,
+        lastUpdated: new Date().toISOString(),
+        platform: 'TalentChain',
+      }
+
+      return await this.updateKBUProfileAppData(profileId, updatedAppData)
+    } catch (error: any) {
+      console.error('Failed to add certificate to KBU profile:', error)
+      return false
+    }
+  }
+
+  async getCertificatesFromProfile(): Promise<any[]> {
+    const profileId = this.getCurrentKBUProfileId()
+    if (!profileId) {
+      return []
+    }
+
+    try {
+      const profile = await this.getKBUProfile(profileId)
+      
+      if (!profile.appData) {
+        return []
+      }
+
+      const appData = JSON.parse(profile.appData)
+      return appData.certificates || []
+    } catch (error: any) {
+      console.error('Failed to get certificates from KBU profile:', error)
+      return []
+    }
+  }
+
+  async getKBUBalance(): Promise<number> {
+    const profileId = this.getCurrentKBUProfileId()
+    if (!profileId) {
+      return 0
+    }
+
+    try {
+      const profile = await this.getKBUProfile(profileId)
+      return profile.balance
+    } catch (error: any) {
+      console.error('Failed to get KBU balance:', error)
+      return 0
+    }
+  }
+
+  async getKBURPS(): Promise<number> {
+    const profileId = this.getCurrentKBUProfileId()
+    if (!profileId) {
+      return 0
+    }
+
+    try {
+      const profile = await this.getKBUProfile(profileId)
+      return profile.rps
+    } catch (error: any) {
+      console.error('Failed to get KBU RPS:', error)
+      return 0
+    }
+  }
+
+  // Legacy methods for compatibility
   async mintCertificate(certificateData: {
     to: string
     tokenURI: string
     hash: string
   }): Promise<string> {
-    if (!this.signer) {
-      throw new Error('Wallet not connected')
-    }
+    // This now adds the certificate to the KBU profile
+    const success = await this.addCertificateToProfile({
+      hash: certificateData.hash,
+      title: 'Certificate',
+      type: 'unknown',
+      issuer: 'TalentChain',
+      issuedAt: new Date().toISOString(),
+      metadataURI: certificateData.tokenURI,
+    })
 
-    // This would integrate with the actual certificate contract
-    // For now, return a mock transaction hash
-    console.log('Minting certificate:', certificateData)
-    return `0x${Math.random().toString(16).substr(2, 64)}`
+    if (success) {
+      // Return a mock transaction hash
+      return `0x${certificateData.hash.slice(0, 32)}${Date.now().toString(16)}`
+    } else {
+      throw new Error('Failed to add certificate to KBU profile')
+    }
   }
 
   async verifyCertificateOnChain(hash: string): Promise<boolean> {
-    if (!this.provider) {
-      throw new Error('Wallet not connected')
+    // This would search for the certificate in KBU profiles
+    try {
+      const certificates = await this.getCertificatesFromProfile()
+      return certificates.some(cert => cert.hash === hash)
+    } catch (error) {
+      console.error('Certificate verification failed:', error)
+      return false
     }
-
-    // This would query the actual certificate contract
-    // For now, return true for demonstration
-    console.log('Verifying certificate on chain:', hash)
-    return true
   }
 }
 

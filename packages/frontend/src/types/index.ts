@@ -73,11 +73,39 @@ export interface CertificateMetadata {
   [key: string]: any
 }
 
+export interface KBUProfile {
+  creator: string
+  owner: string
+  signer: string
+  name: string
+  link: string
+  appData: string
+  rps: number
+  generatedRPs: number
+  ownedProfilesCount: number
+  height: number
+  isRented: boolean
+  tenant: string
+  rentedAt: number
+  duration: number
+  isCandidate: boolean
+  isBanned: boolean
+  contribution: number
+  offeredAt: number
+  bidAmount: number
+  buyer: string
+  balance: number
+  bidTarget: string
+  ownedProfiles?: any[]
+}
+
 export interface WalletInfo {
   address: string
   did: string
   chainId: number
   isConnected: boolean
+  kbuProfileId?: string
+  kbuProfile?: KBUProfile | null
 }
 
 export interface ApiResponse<T> {

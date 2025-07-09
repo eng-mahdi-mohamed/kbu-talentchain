@@ -68,6 +68,24 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const getNonce = async (): Promise<{ nonce: string }> => {
+    try {
+      return await authApi.getNonce()
+    } catch (error) {
+      console.error('Failed to get nonce:', error)
+      throw error
+    }
+  }
+
+  const getLoginMessage = async (walletAddress: string, nonce: string): Promise<{ message: string }> => {
+    try {
+      return await authApi.getLoginMessage(walletAddress, nonce)
+    } catch (error) {
+      console.error('Failed to get login message:', error)
+      throw error
+    }
+  }
+
   const logout = () => {
     user.value = null
     token.value = null
@@ -90,6 +108,8 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     connectWallet,
     signMessage,
+    getNonce,
+    getLoginMessage,
     logout,
     updateUser
   }
