@@ -1,149 +1,228 @@
 # KBU TalentChain
 
-**KBU TalentChain** is a comprehensive decentralized employment platform that enables educational institutions and employers to issue, verify, and manage professional certificates and work experience securely and transparently using Web3 and blockchain technologies.
+A decentralized verification platform for academic and professional certificates using Web3 and DID technology. KBU TalentChain enables educational institutions and employers to issue NFT-based certificates and verify them publicly via blockchain, offering job seekers a secure and verifiable credential ecosystem.
 
----
+## 🚀 Features
 
-## Table of Contents
+- **Decentralized Identity (DID)**: Wallet-based authentication using Ethereum
+- **NFT Certificates**: Tamper-proof certificates minted as NFTs on blockchain
+- **IPFS Storage**: Decentralized metadata storage for certificate data
+- **AI-Powered**: GPT-4 integration for certificate extraction and verification queries
+- **Reputation System**: Community-driven trust scoring
+- **Multi-Role Support**: Users, Institutions, Employers, and Administrators
+- **Real-time Verification**: Instant certificate validation via blockchain
 
-- [About](#about)
-- [Features](#features)
-- [Technology Stack](#technology-stack)
-- [How It Works](#how-it-works)
-- [Getting Started](#getting-started)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+## 🏗️ Architecture
 
----
+### Tech Stack
 
-## About
+- **Backend**: NestJS with TypeScript
+- **Frontend**: Vue 3 + TypeScript + Vite
+- **Database**: PostgreSQL with Prisma ORM
+- **Blockchain**: Custom Web3 integration with ethers.js
+- **Storage**: IPFS for decentralized file storage
+- **AI**: OpenAI GPT-4 for smart features
+- **Authentication**: DID-based wallet authentication
 
-In today’s competitive job market, verifying academic and professional credentials is critical for trust and transparency.  
-**KBU TalentChain** leverages blockchain technology to provide tamper-proof, easily verifiable digital certificates (NFTs) and professional records, bridging the gap between job seekers, educational institutions, and employers.
+### Project Structure
 
----
+```
+kbu-talentchain/
+├── packages/
+│   ├── backend/                 # NestJS API server
+│   │   ├── src/
+│   │   │   ├── auth/           # Authentication module
+│   │   │   ├── users/          # User management
+│   │   │   ├── certificates/   # Certificate operations
+│   │   │   ├── institutions/   # Institution management
+│   │   │   ├── employers/      # Employer management
+│   │   │   ├── verification/   # Certificate verification
+│   │   │   ├── reputation/     # Reputation system
+│   │   │   ├── ai/            # AI-powered features
+│   │   │   ├── blockchain/     # Web3 integration
+│   │   │   ├── ipfs/          # IPFS integration
+│   │   │   └── prisma/        # Database layer
+│   │   └── prisma/
+│   │       └── schema.prisma   # Database schema
+│   ├── frontend/               # Vue.js application
+│   │   ├── src/
+│   │   │   ├── components/     # Reusable components
+│   │   │   ├── views/         # Page components
+│   │   │   ├── stores/        # Pinia state management
+│   │   │   ├── services/      # API and wallet services
+│   │   │   ├── types/         # TypeScript definitions
+│   │   │   └── assets/        # Static assets
+│   │   └── public/
+│   └── shared/                 # Shared utilities and types
+├── package.json               # Root workspace configuration
+└── README.md
+```
 
-## Features
+## 📊 Database Schema
 
-- **Institution Registration & Accreditation**  
-  Educational and professional institutions can register and get accredited to issue verified digital certificates.
+### Core Entities
 
-- **Certificate Issuance as NFTs**  
-  Certificates are issued as blockchain NFTs ensuring immutability and privacy (no personal data stored on-chain).
+- **Users**: DID-based user accounts with role-based access
+- **Institutions**: Educational institutions issuing academic certificates  
+- **Employers**: Companies issuing experience certificates
+- **Certificates**: NFT-based certificates with blockchain verification
+- **VerificationLogs**: Public record of verification events
+- **Reputation**: Community trust scoring system
 
-- **User Profile & Certificate Management**  
-  Job seekers upload their certificates and link them to verified NFTs on the blockchain.
+## 🔐 Authentication Flow
 
-- **Employer Verification & Reputation System**  
-  Employers can verify candidate credentials instantly and endorse their skills, contributing to a reputation score.
+1. User connects Web3 wallet (MetaMask)
+2. Generate DID from wallet address
+3. Sign authentication message with wallet
+4. Backend verifies signature and issues JWT
+5. Automatic user registration for new DIDs
 
-- **Multi-Platform Support**  
-  - Web frontend built with Vue.js  
-  - Mobile applications developed in Flutter  
-  - Backend API powered by Nest.js and Prisma
+## 🎯 User Flows
 
-- **Decentralized Identity & Security**  
-  Integrates Web3 protocols to maintain secure decentralized identities and trust.
+### Certificate Issuance
+1. Institution/Employer creates certificate with metadata
+2. System generates unique hash of certificate content
+3. Metadata uploaded to IPFS for decentralized storage
+4. NFT minted on blockchain with IPFS metadata URI
+5. Certificate stored in database with blockchain reference
 
----
+### Certificate Verification  
+1. Verifier provides certificate hash or holder DID
+2. System queries blockchain for certificate validity
+3. Verification result logged publicly
+4. Certificate details and history displayed
 
-## Technology Stack
+### AI Features
+- **Smart Certificate Assistant**: Extract data from uploaded documents
+- **Natural Verification Chat**: Query certificates using natural language
 
-| Layer          | Technology           |
-|----------------|----------------------|
-| Backend API    | Nest.js, Prisma ORM  |
-| Database       | PostgreSQL           |
-| Frontend Web   | Vue.js               |
-| Mobile Apps    | Flutter              |
-| Blockchain     | Ethereum-based NFTs  |
-| DevOps & CI/CD | Docker, GitHub Actions |
+## 🌐 API Endpoints
 
----
+### Authentication
+- `POST /api/auth/login` - DID-based login
+- `GET /api/auth/nonce` - Get signing nonce
+- `GET /api/auth/message` - Get login message
 
-## How It Works
+### Certificates
+- `GET /api/certificates` - List certificates
+- `POST /api/certificates` - Issue new certificate
+- `GET /api/certificates/:id` - Get certificate details
+- `POST /api/verification/verify` - Verify certificate
 
-1. **Institution Onboarding**  
-   Institutions submit registration requests and are verified by platform admins.
+### Users & Entities
+- `GET /api/users` - List users (admin)
+- `POST /api/institutions` - Register institution
+- `POST /api/employers` - Register employer
 
-2. **Certificate Issuance**  
-   Verified institutions issue certificates as NFTs linked to their profiles.
+## 🎨 Frontend Pages
 
-3. **User Upload**  
-   Job seekers upload their certificates files and link NFT hashes.
+- **Home** (`/`) - Landing page with platform overview
+- **Auth** (`/auth`) - Wallet connection and DID binding
+- **User Dashboard** (`/dashboard`) - Personal certificate management
+- **Institution Dashboard** (`/institution`) - Certificate issuance for institutions
+- **Employer Dashboard** (`/employer`) - Experience certificate management
+- **Admin Panel** (`/admin`) - System administration
+- **Verification** (`/verify`) - Public certificate verification
 
-4. **Verification**  
-   Employers query the platform to verify authenticity via on-chain data.
-
-5. **Reputation & Endorsement**  
-   Employers can endorse candidates’ certificates, improving their reputation score.
-
----
-
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
-
-- Node.js (v16+)
-- PostgreSQL
-- Flutter SDK (for mobile development)
-- Docker (optional for local dev environment)
+- Node.js 18+
+- PostgreSQL database
+- IPFS node (optional - uses mock mode)
+- Web3 wallet (MetaMask)
 
 ### Installation
 
-```bash
-# Clone the repo
-git clone https://github.com/your-org/kbu-talentchain.git
-cd kbu-talentchain
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd kbu-talentchain
+   ```
 
-# Install backend dependencies
-cd apps/backend
-npm install
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-# Setup database
-npx prisma migrate dev
+3. **Setup environment variables**
+   ```bash
+   # Backend (.env in packages/backend/)
+   DATABASE_URL="postgresql://username:password@localhost:5432/kbu_talentchain"
+   JWT_SECRET="your-super-secret-jwt-key"
+   OPENAI_API_KEY="your-openai-api-key"
+   BLOCKCHAIN_RPC_URL="http://localhost:8545"
+   IPFS_HOST="localhost"
+   ```
 
-# Run backend server
-npm run start:dev
+4. **Setup database**
+   ```bash
+   npm run setup:backend
+   ```
 
-# For frontend (in new terminal)
-cd ../web
-npm install
-npm run serve
+5. **Start development servers**
+   ```bash
+   npm run dev
+   ```
 
-# For mobile app
-cd ../mobile
-flutter pub get
-flutter run
-```
+   This will start:
+   - Backend API: http://localhost:3001
+   - Frontend App: http://localhost:3000
+   - API Documentation: http://localhost:3001/api/docs
 
----
+## 🔧 Configuration
 
-## Contributing
+### Blockchain Setup
+- Configure your custom Web3 network in environment variables
+- Deploy the certificate NFT contract
+- Update contract address in configuration
 
-We welcome contributions from the community! Whether it's a bug fix, new feature, or improvement to documentation,
-please feel free to open a pull request or an issue.
+### IPFS Setup
+- Install and run local IPFS node, or
+- Use a hosted IPFS service
+- System falls back to mock mode if IPFS is unavailable
 
-To contribute:
+### AI Features
+- Add OpenAI API key for GPT-4 integration
+- Configure certificate extraction prompts
+- Set up natural language query processing
+
+## 📱 Mobile Support
+
+The platform includes responsive design for mobile devices and can be extended with the planned Flutter mobile application for:
+- Mobile certificate viewing
+- QR code scanning for verification
+- Push notifications for certificate updates
+
+## 🛡️ Security Features
+
+- **DID-based Authentication**: No traditional passwords
+- **Blockchain Verification**: Tamper-proof certificate storage
+- **Signature Validation**: Cryptographic proof of authenticity
+- **Role-based Access Control**: Granular permissions
+- **Rate Limiting**: API protection against abuse
+
+## 🤝 Contributing
+
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/my-feature`)
-3. Commit your changes (`git commit -am 'Add new feature'`)
-4. Push to the branch (`git push origin feature/my-feature`)
-5. Open a pull request
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines.
+## 📄 License
 
----
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## License
+## 🔗 Links
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- [API Documentation](http://localhost:3001/api/docs)
+- [Frontend Application](http://localhost:3000)
+- [Project Repository](https://github.com/kbu-university/talentchain)
 
----
+## � Support
 
-## Contact
-
-For support, questions, or feedback:
-- 📧 Email: support@kbutalentchain.com
-- 🌐 Website: [https://kbutalentchain.com](https://kbutalentchain.com)
-- 🐙 GitHub: [github.com/Kbunet/kbu-talentchain](https://github.com/Kbunet/kbu-talentchain)
+For support and questions:
+- Email: support@kbu.edu
+- Documentation: [docs.talentchain.kbu.edu]
+- Community: [community.talentchain.kbu.edu]

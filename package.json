@@ -1,0 +1,22 @@
+{
+  "name": "kbu-talentchain",
+  "version": "1.0.0",
+  "description": "A decentralized verification platform for academic and professional certificates using Web3 and DID",
+  "private": true,
+  "workspaces": [
+    "packages/backend",
+    "packages/frontend",
+    "packages/shared"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=packages/backend",
+    "dev:frontend": "npm run dev --workspace=packages/frontend",
+    "build": "npm run build --workspace=packages/backend && npm run build --workspace=packages/frontend",
+    "setup": "npm install && npm run setup:backend",
+    "setup:backend": "npm run prisma:generate --workspace=packages/backend && npm run prisma:deploy --workspace=packages/backend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
